@@ -16,6 +16,10 @@ class Plan {
   final double? height;
   final String? reminderTime;
   final int currentDay;
+  final String? targetLegShape;
+  final double? targetThighCircumference;
+  final double? targetCalfCircumference;
+  final double? targetWeight;
 
   Plan({
     this.id,
@@ -35,6 +39,10 @@ class Plan {
     this.height,
     this.reminderTime,
     this.currentDay = 1,
+    this.targetLegShape,
+    this.targetThighCircumference,
+    this.targetCalfCircumference,
+    this.targetWeight,
   });
 
   Map<String, dynamic> toMap() {
@@ -56,6 +64,10 @@ class Plan {
       'height': height,
       'reminderTime': reminderTime,
       'currentDay': currentDay,
+      'targetLegShape': targetLegShape,
+      'targetThighCircumference': targetThighCircumference,
+      'targetCalfCircumference': targetCalfCircumference,
+      'targetWeight': targetWeight,
     };
   }
 
@@ -78,6 +90,10 @@ class Plan {
       height: map['height'] != null ? (map['height'] as num).toDouble() : null,
       reminderTime: map['reminderTime'],
       currentDay: map['currentDay'] ?? 1,
+      targetLegShape: map['targetLegShape'],
+      targetThighCircumference: map['targetThighCircumference'] != null ? (map['targetThighCircumference'] as num).toDouble() : null,
+      targetCalfCircumference: map['targetCalfCircumference'] != null ? (map['targetCalfCircumference'] as num).toDouble() : null,
+      targetWeight: map['targetWeight'] != null ? (map['targetWeight'] as num).toDouble() : null,
     );
   }
 }

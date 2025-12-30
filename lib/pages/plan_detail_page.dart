@@ -14,6 +14,7 @@ class PlanDetailPage extends StatefulWidget {
 
 class _PlanDetailPageState extends State<PlanDetailPage> {
   late Plan _currentPlan;
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -157,13 +158,99 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
     if (analysis['status'] != 'success') return const SizedBox.shrink();
     
     final data = analysis['data'] as Map<String, dynamic>;
+    final bool isGoalAchieved = data['isGoalAchieved'] ?? false;
+    final List<String> achievedGoals = List<String>.from(data['achievedGoals'] ?? []);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '腿部评估报告',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        if (isGoalAchieved)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 24),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(_currentPlan.colorValue),
+                  Color(_currentPlan.colorValue).withOpacity(0.7),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(_currentPlan.colorValue).withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                const Icon(Icons.stars_rounded, color: Colors.white, size: 48),
+                const SizedBox(height: 12),
+                const Text(
+                  '恭喜！目标已达成',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  achievedGoals.join(' • '),
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _editPlan,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Color(_currentPlan.colorValue),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: const Text('设定新目标', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '腿部评估报告',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            if (data['targetShape'] != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Color(_currentPlan.colorValue).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Color(_currentPlan.colorValue).withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.track_changes_rounded, size: 14, color: Color(_currentPlan.colorValue)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '目标: ${data['targetShape']}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(_currentPlan.colorValue),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 16),
         Row(
@@ -192,9 +279,11 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             TextButton.icon(
-              onPressed: _completeTodayTasks,
-              icon: const Icon(Icons.check_circle_rounded),
-              label: const Text('完成今日任务'),
+              onPressed: _isProcessing ? null : _completeTodayTasks,
+              icon: _isProcessing 
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.check_circle_rounded),
+              label: Text(_isProcessing ? '处理中...' : '完成今日任务'),
               style: TextButton.styleFrom(
                 foregroundColor: Color(_currentPlan.colorValue),
                 backgroundColor: Color(_currentPlan.colorValue).withOpacity(0.1),
@@ -212,51 +301,66 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   }
 
   void _completeTodayTasks() async {
-    final newDay = _currentPlan.currentDay + 1;
-    // 假设总计划周期为28天，用于计算进度
-    const totalDays = 28;
-    final newProgress = (newDay - 1) / totalDays;
-    
-    final updatedPlan = Plan(
-      id: _currentPlan.id,
-      title: _currentPlan.title,
-      subtitle: _currentPlan.subtitle,
-      progress: newProgress > 1.0 ? 1.0 : newProgress,
-      iconName: _currentPlan.iconName,
-      colorValue: _currentPlan.colorValue,
-      planType: _currentPlan.planType,
-      thighCircumference: _currentPlan.thighCircumference,
-      calfCircumference: _currentPlan.calfCircumference,
-      isThighClosed: _currentPlan.isThighClosed,
-      isCalfClosed: _currentPlan.isCalfClosed,
-      isThighHard: _currentPlan.isThighHard,
-      isCalfHard: _currentPlan.isCalfHard,
-      weight: _currentPlan.weight,
-      height: _currentPlan.height,
-      reminderTime: _currentPlan.reminderTime,
-      currentDay: newDay,
-    );
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
 
-    final dbHelper = DatabaseHelper();
-    await dbHelper.updatePlan(updatedPlan);
-
-    setState(() {
-      _currentPlan = updatedPlan;
-    });
-
-    if (!mounted) return;
-
-    // 检查阶段完成 (每7天为一个阶段)
-    if ((newDay - 1) % 7 == 0) {
-      _showStageCompleteReminder();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('第 ${_currentPlan.currentDay - 1} 天任务已完成！'),
-          backgroundColor: Color(_currentPlan.colorValue),
-          behavior: SnackBarBehavior.floating,
-        ),
+    try {
+      final newDay = _currentPlan.currentDay + 1;
+      // 假设总计划周期为28天，用于计算进度
+      const totalDays = 28;
+      final newProgress = (newDay - 1) / totalDays;
+      
+      final updatedPlan = Plan(
+        id: _currentPlan.id,
+        title: _currentPlan.title,
+        subtitle: _currentPlan.subtitle,
+        progress: newProgress > 1.0 ? 1.0 : newProgress,
+        iconName: _currentPlan.iconName,
+        colorValue: _currentPlan.colorValue,
+        planType: _currentPlan.planType,
+        thighCircumference: _currentPlan.thighCircumference,
+        calfCircumference: _currentPlan.calfCircumference,
+        isThighClosed: _currentPlan.isThighClosed,
+        isCalfClosed: _currentPlan.isCalfClosed,
+        isThighHard: _currentPlan.isThighHard,
+        isCalfHard: _currentPlan.isCalfHard,
+        weight: _currentPlan.weight,
+        height: _currentPlan.height,
+        reminderTime: _currentPlan.reminderTime,
+        currentDay: newDay,
+        targetLegShape: _currentPlan.targetLegShape,
       );
+
+      final dbHelper = DatabaseHelper();
+      await dbHelper.updatePlan(updatedPlan);
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentPlan = updatedPlan;
+        _isProcessing = false;
+      });
+
+      // 检查阶段完成 (每7天为一个阶段，排除第1天)
+      if (newDay > 1 && (newDay - 1) % 7 == 0) {
+        _showStageCompleteReminder();
+      } else {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('第 ${_currentPlan.currentDay - 1} 天任务已完成！'),
+            backgroundColor: Color(_currentPlan.colorValue),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('操作失败: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 

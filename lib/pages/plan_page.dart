@@ -178,11 +178,37 @@ class PlanPageState extends State<PlanPage> {
     if (analysis['status'] != 'success') return const SizedBox.shrink();
 
     final data = analysis['data'];
+    final bool isGoalAchieved = data['isGoalAchieved'] ?? false;
     final currentDay = plan.currentDay;
     final reminderTime = plan.reminderTime;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (isGoalAchieved)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.2)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.emoji_events_rounded, size: 16, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  '目标已达成！太棒了！',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
         Row(
           children: [
             Text(
@@ -209,6 +235,24 @@ class PlanPageState extends State<PlanPage> {
                 ),
               ),
             ),
+            if (data['targetShape'] != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  data['targetShape'],
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 4),

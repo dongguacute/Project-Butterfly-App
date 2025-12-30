@@ -21,7 +21,7 @@ class DatabaseHelper {
     print('Opening database at $path');
     return await openDatabase(
       path,
-      version: 8,
+      version: 10,
       onCreate: (db, version) async {
         print('Creating database version $version');
         await _onCreate(db, version);
@@ -52,7 +52,11 @@ class DatabaseHelper {
         weight REAL,
         height REAL,
         reminderTime TEXT,
-        currentDay INTEGER DEFAULT 1
+        currentDay INTEGER DEFAULT 1,
+        targetLegShape TEXT,
+        targetThighCircumference REAL,
+        targetCalfCircumference REAL,
+        targetWeight REAL
       )
     ''');
   }
@@ -70,6 +74,10 @@ class DatabaseHelper {
     await _addColumnIfNotExists(db, 'plans', 'height', 'REAL');
     await _addColumnIfNotExists(db, 'plans', 'reminderTime', 'TEXT');
     await _addColumnIfNotExists(db, 'plans', 'currentDay', 'INTEGER DEFAULT 1');
+    await _addColumnIfNotExists(db, 'plans', 'targetLegShape', 'TEXT');
+    await _addColumnIfNotExists(db, 'plans', 'targetThighCircumference', 'REAL');
+    await _addColumnIfNotExists(db, 'plans', 'targetCalfCircumference', 'REAL');
+    await _addColumnIfNotExists(db, 'plans', 'targetWeight', 'REAL');
     print('Database upgrade completed');
   }
 

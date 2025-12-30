@@ -17,6 +17,9 @@ class _AddPlanPageState extends State<AddPlanPage> {
   late TextEditingController calfController;
   late TextEditingController weightController;
   late TextEditingController heightController;
+  late TextEditingController targetThighController;
+  late TextEditingController targetCalfController;
+  late TextEditingController targetWeightController;
   final DatabaseHelper _dbHelper = DatabaseHelper();
   late Color selectedColor;
   late String selectedType;
@@ -25,6 +28,7 @@ class _AddPlanPageState extends State<AddPlanPage> {
   late bool isThighHard;
   late bool isCalfHard;
   TimeOfDay? reminderTime;
+  late String selectedTargetShape;
 
   @override
   void initState() {
@@ -35,6 +39,9 @@ class _AddPlanPageState extends State<AddPlanPage> {
     calfController = TextEditingController(text: widget.plan?.calfCircumference?.toString() ?? '');
     weightController = TextEditingController(text: widget.plan?.weight?.toString() ?? '');
     heightController = TextEditingController(text: widget.plan?.height?.toString() ?? '');
+    targetThighController = TextEditingController(text: widget.plan?.targetThighCircumference?.toString() ?? '');
+    targetCalfController = TextEditingController(text: widget.plan?.targetCalfCircumference?.toString() ?? '');
+    targetWeightController = TextEditingController(text: widget.plan?.targetWeight?.toString() ?? '');
     
     selectedColor = widget.plan != null ? Color(widget.plan!.colorValue) : Colors.deepPurple;
     selectedType = widget.plan?.planType ?? '脸部计划';
@@ -42,6 +49,7 @@ class _AddPlanPageState extends State<AddPlanPage> {
     isCalfClosed = widget.plan?.isCalfClosed ?? false;
     isThighHard = widget.plan?.isThighHard ?? false;
     isCalfHard = widget.plan?.isCalfHard ?? false;
+    selectedTargetShape = widget.plan?.targetLegShape ?? '匀称';
     
     if (widget.plan?.reminderTime != null) {
       final parts = widget.plan!.reminderTime!.split(':');
@@ -59,6 +67,9 @@ class _AddPlanPageState extends State<AddPlanPage> {
     calfController.dispose();
     weightController.dispose();
     heightController.dispose();
+    targetThighController.dispose();
+    targetCalfController.dispose();
+    targetWeightController.dispose();
     super.dispose();
   }
 
@@ -132,6 +143,10 @@ class _AddPlanPageState extends State<AddPlanPage> {
                             ? '${reminderTime!.hour.toString().padLeft(2, '0')}:${reminderTime!.minute.toString().padLeft(2, '0')}' 
                             : null,
                           currentDay: widget.plan?.currentDay ?? 1,
+                          targetLegShape: selectedType == '腿部计划' ? selectedTargetShape : null,
+                          targetThighCircumference: selectedType == '腿部计划' ? double.tryParse(targetThighController.text) : null,
+                          targetCalfCircumference: selectedType == '腿部计划' ? double.tryParse(targetCalfController.text) : null,
+                          targetWeight: (selectedType == '体重计划' || selectedType == '腿部计划') ? double.tryParse(targetWeightController.text) : null,
                         );
 
                         if (widget.plan == null) {
@@ -226,7 +241,79 @@ class _AddPlanPageState extends State<AddPlanPage> {
                     );
                   }).toList(),
                 ),
+                if (selectedType == '体重计划') ...[
+                  const SizedBox(height: 32),
+                  const Text(
+                    '体重资料',
+                    style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: weightController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: '当前体重 (kg)',
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: targetWeightController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: '目标体重 (kg)',
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 if (selectedType == '腿部计划') ...[
+                  const SizedBox(height: 32),
+                  const Text(
+                    '目标腿形',
+                    style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: ['匀称', '细长', '力量', '矫正'].map((shape) {
+                      final isSelected = selectedTargetShape == shape;
+                      return ChoiceChip(
+                        label: Text(shape),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() => selectedTargetShape = shape);
+                          }
+                        },
+                        selectedColor: selectedColor.withOpacity(0.2),
+                        labelStyle: TextStyle(
+                          color: isSelected ? selectedColor : Theme.of(context).colorScheme.onSurface,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 13,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      );
+                    }).toList(),
+                  ),
                   const SizedBox(height: 32),
                   const Text(
                     '腿部资料',
@@ -253,12 +340,12 @@ class _AddPlanPageState extends State<AddPlanPage> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: TextField(
-                          controller: heightController,
+                          controller: targetWeightController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: '身高 (cm)',
+                            labelText: '目标体重 (kg)',
                             filled: true,
-                            fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                            fillColor: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -289,6 +376,26 @@ class _AddPlanPageState extends State<AddPlanPage> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: TextField(
+                          controller: targetThighController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: '目标大腿围 (cm)',
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
                           controller: calfController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
@@ -302,7 +409,37 @@ class _AddPlanPageState extends State<AddPlanPage> {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: targetCalfController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: '目标小腿围 (cm)',
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: heightController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: '身高 (cm)',
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   SwitchListTile(

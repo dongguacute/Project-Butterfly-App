@@ -37,7 +37,14 @@ class LegRoutines {
     'extra': ['蝴蝶式拉伸 2分钟', '外展肌加强练习 20次 x 3组', '单腿站立平衡 每侧 30秒'],
   };
 
-  static List<String> getDailyTasks(String muscleType, String shapeStatus, int day) {
+  static const Map<String, List<String>> targetShapeExtras = {
+    '细长': ['空中自行车 100次', '靠墙竖腿 10分钟', '剪刀腿 30次 x 3组'],
+    '力量': ['负重深蹲 12次 x 4组', '保加利亚分腿蹲 每侧 12次 x 3组', '提踵训练 20次 x 4组'],
+    '匀称': ['慢跑 15分钟', '综合拉伸 10分钟', '瑜伽腿部流 15分钟'],
+    '矫正': ['足底放松 5分钟', '靠墙站立 5分钟 (保持腿部并拢)', '盆底肌激活 15次 x 3组'],
+  };
+
+  static List<String> getDailyTasks(String muscleType, String shapeStatus, int day, {String? targetShape}) {
     int cycleDay = ((day - 1) % 7) + 1;
     String dayKey = cycleDay.toString();
     
@@ -54,9 +61,15 @@ class LegRoutines {
 
     // 针对腿型的额外练习
     if (shapeStatus == 'O型腿倾向') {
-      tasks.add('【专项】' + oShapeCorrection['extra']![ (day - 1) % oShapeCorrection['extra']!.length ]);
+      tasks.add('【纠偏】' + oShapeCorrection['extra']![ (day - 1) % oShapeCorrection['extra']!.length ]);
     } else if (shapeStatus == 'X型腿倾向') {
-      tasks.add('【专项】' + xShapeCorrection['extra']![ (day - 1) % xShapeCorrection['extra']!.length ]);
+      tasks.add('【纠偏】' + xShapeCorrection['extra']![ (day - 1) % xShapeCorrection['extra']!.length ]);
+    }
+
+    // 针对目标腿形的额外练习
+    if (targetShape != null && targetShapeExtras.containsKey(targetShape)) {
+      final extras = targetShapeExtras[targetShape]!;
+      tasks.add('【目标】' + extras[(day - 1) % extras.length]);
     }
 
     return tasks;
