@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/plan_model.dart';
 import '../services/database_helper.dart';
+import '../algorithms/leg_algorithm.dart';
 import 'add_plan_page.dart';
+import 'plan_detail_page.dart';
 
 class PlanPage extends StatefulWidget {
   const PlanPage({super.key});
@@ -41,22 +43,6 @@ class PlanPageState extends State<PlanPage> {
     if (result == true) {
       _loadPlans();
     }
-  }
-
-  Widget _colorOption(Color color, Color selectedColor, Function(Color) onSelect) {
-    final isSelected = color.value == selectedColor.value;
-    return GestureDetector(
-      onTap: () => onSelect(color),
-      child: Container(
-        width: 30,
-        height: 30,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: isSelected ? Border.all(color: Colors.black, width: 2) : null,
-        ),
-      ),
-    );
   }
 
   Future<void> _deletePlan(int id) async {
@@ -105,20 +91,11 @@ class PlanPageState extends State<PlanPage> {
             padding: const EdgeInsets.only(bottom: 16),
             child: _buildPlanCard(
               context,
-              title: plan.title,
-              subtitle: plan.subtitle,
-              progress: plan.progress,
-              icon: _getIconData(plan.iconName),
-              color: Color(plan.colorValue),
-              planType: plan.planType,
-              thighCircumference: plan.thighCircumference,
-              calfCircumference: plan.calfCircumference,
-              isThighClosed: plan.isThighClosed,
-              isCalfClosed: plan.isCalfClosed,
+              plan,
               onDelete: () => _deletePlan(plan.id!),
             ),
           )),
-      ],
+        ],
     );
   }
 
@@ -193,22 +170,156 @@ class PlanPageState extends State<PlanPage> {
     );
   }
 
+  Widget _buildLegAnalysis(BuildContext context, Plan plan) {
+    if (plan.planType != '腿部计划') return const SizedBox.shrink();
+    
+    final analysis = LegAlgorithm.analyzeLegData(plan);
+
+    if (analysis['status'] != 'success') return const SizedBox.shrink();
+
+    final data = analysis['data'];
+    final currentDay = plan.currentDay;
+    final reminderTime = plan.reminderTime;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              '智能评估: ${data['legShapeStatus']}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.tertiaryContainer.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                data['muscleType'],
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.tertiary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '比例分析: ${data['ratioDescription']} (比值 ${data['ratio']})',
+          style: TextStyle(
+            fontSize: 11,
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
+          ),
+        ),
+        const SizedBox(height: 4),
+        ...(data['suggestions'] as List<String>).map((s) => Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('• ', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary)),
+              Expanded(
+                child: Text(
+                  s,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        )).toList(),
+        const Divider(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '今日训练任务 (第 $currentDay 天)',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (reminderTime != null)
+              Row(
+                children: [
+                  Icon(Icons.notifications_active_outlined, size: 14, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 4),
+                  Text(
+                    reminderTime,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ...(data['dailyTasks'] as List<String>).map((task) => Container(
+          margin: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                task == '休息日' ? Icons.bedtime_outlined : Icons.fitness_center,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  task,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
+              Icon(
+                Icons.check_circle_outline,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+              ),
+            ],
+          ),
+        )).toList(),
+      ],
+    );
+  }
+
   Widget _buildPlanCard(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required double progress,
-    required IconData icon,
-    required Color color,
-    String? planType,
-    double? thighCircumference,
-    double? calfCircumference,
-    bool? isThighClosed,
-    bool? isCalfClosed,
+    BuildContext context,
+    Plan plan, {
     VoidCallback? onDelete,
   }) {
+    final title = plan.title;
+    final subtitle = plan.subtitle;
+    final progress = plan.progress;
+    final icon = _getIconData(plan.iconName);
+    final color = Color(plan.colorValue);
+    final planType = plan.planType;
+    final thighCircumference = plan.thighCircumference;
+    final calfCircumference = plan.calfCircumference;
+    final isThighClosed = plan.isThighClosed;
+    final isCalfClosed = plan.isCalfClosed;
+
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
@@ -223,93 +334,109 @@ class PlanPageState extends State<PlanPage> {
           color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
         ),
       ),
-      child: Column(
-        children: [
-          Row(
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PlanDetailPage(plan: plan),
+            ),
+          ).then((_) => _loadPlans());
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(icon, color: color),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(icon, color: color),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        if (planType != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: color.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              planType,
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: color,
-                                fontWeight: FontWeight.bold,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
+                            if (planType != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: color.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  planType,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: color,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
+                        ),
+                        if (planType == '腿部计划' && (thighCircumference != null || calfCircumference != null)) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              if (thighCircumference != null)
+                                _buildLegInfoChip(context, '大腿', '$thighCircumference cm', isThighClosed),
+                              if (thighCircumference != null && calfCircumference != null)
+                                const SizedBox(width: 8),
+                              if (calfCircumference != null)
+                                _buildLegInfoChip(context, '小腿', '$calfCircumference cm', isCalfClosed),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          _buildLegAnalysis(context, plan),
+                        ],
                       ],
                     ),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                  ),
+                  if (onDelete != null)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.grey, size: 20),
+                      onPressed: onDelete,
                     ),
-                    if (planType == '腿部计划' && (thighCircumference != null || calfCircumference != null)) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          if (thighCircumference != null)
-                            _buildLegInfoChip(context, '大腿', '$thighCircumference cm', isThighClosed),
-                          if (thighCircumference != null && calfCircumference != null)
-                            const SizedBox(width: 8),
-                          if (calfCircumference != null)
-                            _buildLegInfoChip(context, '小腿', '$calfCircumference cm', isCalfClosed),
-                        ],
-                      ),
-                    ],
-                  ],
+                ],
+              ),
+              const SizedBox(height: 20),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 8,
+                  backgroundColor: color.withOpacity(0.1),
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
                 ),
               ),
-              if (onDelete != null)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.grey, size: 20),
-                  onPressed: onDelete,
-                ),
             ],
           ),
-          const SizedBox(height: 20),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              backgroundColor: color.withOpacity(0.1),
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

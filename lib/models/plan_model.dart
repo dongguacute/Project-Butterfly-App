@@ -10,6 +10,12 @@ class Plan {
   final double? calfCircumference;
   final bool? isThighClosed;
   final bool? isCalfClosed;
+  final bool? isThighHard;
+  final bool? isCalfHard;
+  final double? weight;
+  final double? height;
+  final String? reminderTime;
+  final int currentDay;
 
   Plan({
     this.id,
@@ -23,6 +29,12 @@ class Plan {
     this.calfCircumference,
     this.isThighClosed,
     this.isCalfClosed,
+    this.isThighHard,
+    this.isCalfHard,
+    this.weight,
+    this.height,
+    this.reminderTime,
+    this.currentDay = 1,
   });
 
   Map<String, dynamic> toMap() {
@@ -38,6 +50,12 @@ class Plan {
       'calfCircumference': calfCircumference,
       'isThighClosed': isThighClosed == null ? null : (isThighClosed! ? 1 : 0),
       'isCalfClosed': isCalfClosed == null ? null : (isCalfClosed! ? 1 : 0),
+      'isThighHard': isThighHard == null ? null : (isThighHard! ? 1 : 0),
+      'isCalfHard': isCalfHard == null ? null : (isCalfHard! ? 1 : 0),
+      'weight': weight,
+      'height': height,
+      'reminderTime': reminderTime,
+      'currentDay': currentDay,
     };
   }
 
@@ -46,14 +64,20 @@ class Plan {
       id: map['id'],
       title: map['title'],
       subtitle: map['subtitle'],
-      progress: map['progress'],
+      progress: (map['progress'] as num).toDouble(),
       iconName: map['iconName'],
       colorValue: map['colorValue'],
       planType: map['planType'],
-      thighCircumference: map['thighCircumference'],
-      calfCircumference: map['calfCircumference'],
+      thighCircumference: map['thighCircumference'] != null ? (map['thighCircumference'] as num).toDouble() : null,
+      calfCircumference: map['calfCircumference'] != null ? (map['calfCircumference'] as num).toDouble() : null,
       isThighClosed: map['isThighClosed'] == null ? null : map['isThighClosed'] == 1,
       isCalfClosed: map['isCalfClosed'] == null ? null : map['isCalfClosed'] == 1,
+      isThighHard: map['isThighHard'] == null ? null : map['isThighHard'] == 1,
+      isCalfHard: map['isCalfHard'] == null ? null : map['isCalfHard'] == 1,
+      weight: map['weight'] != null ? (map['weight'] as num).toDouble() : null,
+      height: map['height'] != null ? (map['height'] as num).toDouble() : null,
+      reminderTime: map['reminderTime'],
+      currentDay: map['currentDay'] ?? 1,
     );
   }
 }

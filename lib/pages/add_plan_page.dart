@@ -3,22 +3,64 @@ import '../models/plan_model.dart';
 import '../services/database_helper.dart';
 
 class AddPlanPage extends StatefulWidget {
-  const AddPlanPage({super.key});
+  final Plan? plan;
+  const AddPlanPage({super.key, this.plan});
 
   @override
   State<AddPlanPage> createState() => _AddPlanPageState();
 }
 
 class _AddPlanPageState extends State<AddPlanPage> {
-  final titleController = TextEditingController();
-  final subtitleController = TextEditingController();
-  final thighController = TextEditingController();
-  final calfController = TextEditingController();
+  late TextEditingController titleController;
+  late TextEditingController subtitleController;
+  late TextEditingController thighController;
+  late TextEditingController calfController;
+  late TextEditingController weightController;
+  late TextEditingController heightController;
   final DatabaseHelper _dbHelper = DatabaseHelper();
-  Color selectedColor = Colors.deepPurple;
-  String selectedType = '脸部计划';
-  bool isThighClosed = false;
-  bool isCalfClosed = false;
+  late Color selectedColor;
+  late String selectedType;
+  late bool isThighClosed;
+  late bool isCalfClosed;
+  late bool isThighHard;
+  late bool isCalfHard;
+  TimeOfDay? reminderTime;
+
+  @override
+  void initState() {
+    super.initState();
+    titleController = TextEditingController(text: widget.plan?.title ?? '');
+    subtitleController = TextEditingController(text: widget.plan?.subtitle ?? '');
+    thighController = TextEditingController(text: widget.plan?.thighCircumference?.toString() ?? '');
+    calfController = TextEditingController(text: widget.plan?.calfCircumference?.toString() ?? '');
+    weightController = TextEditingController(text: widget.plan?.weight?.toString() ?? '');
+    heightController = TextEditingController(text: widget.plan?.height?.toString() ?? '');
+    
+    selectedColor = widget.plan != null ? Color(widget.plan!.colorValue) : Colors.deepPurple;
+    selectedType = widget.plan?.planType ?? '脸部计划';
+    isThighClosed = widget.plan?.isThighClosed ?? false;
+    isCalfClosed = widget.plan?.isCalfClosed ?? false;
+    isThighHard = widget.plan?.isThighHard ?? false;
+    isCalfHard = widget.plan?.isCalfHard ?? false;
+    
+    if (widget.plan?.reminderTime != null) {
+      final parts = widget.plan!.reminderTime!.split(':');
+      if (parts.length == 2) {
+        reminderTime = TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    subtitleController.dispose();
+    thighController.dispose();
+    calfController.dispose();
+    weightController.dispose();
+    heightController.dispose();
+    super.dispose();
+  }
 
   final List<String> planTypes = ['脸部计划', '体重计划', '腿部计划'];
 
@@ -53,38 +95,65 @@ class _AddPlanPageState extends State<AddPlanPage> {
                   icon: const Icon(Icons.close_rounded),
                   onPressed: () => Navigator.pop(context),
                 ),
-                const Text(
-                  '新建计划',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  widget.plan == null ? '新建计划' : '编辑计划',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 TextButton(
                   onPressed: () async {
                     if (titleController.text.isNotEmpty) {
-                      String iconName = 'assignment_rounded';
-                      if (selectedType == '脸部计划') {
-                        iconName = 'face_retouching_natural_rounded';
-                      } else if (selectedType == '体重计划') {
-                        iconName = 'monitor_weight_rounded';
-                      } else if (selectedType == '腿部计划') {
-                        iconName = 'directions_run_rounded';
-                      }
+                      try {
+                        String iconName = 'assignment_rounded';
+                        if (selectedType == '脸部计划') {
+                          iconName = 'face_retouching_natural_rounded';
+                        } else if (selectedType == '体重计划') {
+                          iconName = 'monitor_weight_rounded';
+                        } else if (selectedType == '腿部计划') {
+                          iconName = 'directions_run_rounded';
+                        }
 
-                      final newPlan = Plan(
-                        title: titleController.text,
-                        subtitle: subtitleController.text,
-                        progress: 0.0,
-                        iconName: iconName,
-                        colorValue: selectedColor.value,
-                        planType: selectedType,
-                        thighCircumference: selectedType == '腿部计划' ? double.tryParse(thighController.text) : null,
-                        calfCircumference: selectedType == '腿部计划' ? double.tryParse(calfController.text) : null,
-                        isThighClosed: selectedType == '腿部计划' ? isThighClosed : null,
-                        isCalfClosed: selectedType == '腿部计划' ? isCalfClosed : null,
-                      );
-                      await _dbHelper.insertPlan(newPlan);
-                      if (mounted) {
-                        Navigator.pop(context, true); // 返回 true 表示已添加新计划
+                        final newPlan = Plan(
+                          id: widget.plan?.id,
+                          title: titleController.text,
+                          subtitle: subtitleController.text,
+                          progress: widget.plan?.progress ?? 0.0,
+                          iconName: iconName,
+                          colorValue: selectedColor.value,
+                          planType: selectedType,
+                          thighCircumference: selectedType == '腿部计划' ? double.tryParse(thighController.text) : null,
+                          calfCircumference: selectedType == '腿部计划' ? double.tryParse(calfController.text) : null,
+                          isThighClosed: selectedType == '腿部计划' ? isThighClosed : null,
+                          isCalfClosed: selectedType == '腿部计划' ? isCalfClosed : null,
+                          isThighHard: selectedType == '腿部计划' ? isThighHard : null,
+                          isCalfHard: selectedType == '腿部计划' ? isCalfHard : null,
+                          weight: selectedType == '腿部计划' ? double.tryParse(weightController.text) : null,
+                          height: selectedType == '腿部计划' ? double.tryParse(heightController.text) : null,
+                          reminderTime: reminderTime != null 
+                            ? '${reminderTime!.hour.toString().padLeft(2, '0')}:${reminderTime!.minute.toString().padLeft(2, '0')}' 
+                            : null,
+                          currentDay: widget.plan?.currentDay ?? 1,
+                        );
+
+                        if (widget.plan == null) {
+                          await _dbHelper.insertPlan(newPlan);
+                        } else {
+                          await _dbHelper.updatePlan(newPlan);
+                        }
+                        if (mounted) {
+                          Navigator.pop(context, true); // 返回 true 表示已添加新计划
+                        }
+                      } catch (e) {
+                        debugPrint('Error saving plan: $e');
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('保存失败: $e')),
+                          );
+                        }
                       }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('请输入计划标题')),
+                      );
                     }
                   },
                   child: Text(
@@ -168,6 +237,42 @@ class _AddPlanPageState extends State<AddPlanPage> {
                     children: [
                       Expanded(
                         child: TextField(
+                          controller: weightController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: '体重 (kg)',
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: heightController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: '身高 (cm)',
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
                           controller: thighController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
@@ -214,6 +319,22 @@ class _AddPlanPageState extends State<AddPlanPage> {
                     contentPadding: EdgeInsets.zero,
                     activeColor: selectedColor,
                   ),
+                  SwitchListTile(
+                    title: const Text('发力时大腿是否坚硬', style: TextStyle(fontSize: 15)),
+                    subtitle: const Text('判断是肌肉型还是脂肪型', style: TextStyle(fontSize: 12)),
+                    value: isThighHard,
+                    onChanged: (val) => setState(() => isThighHard = val),
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: selectedColor,
+                  ),
+                  SwitchListTile(
+                    title: const Text('发力时小腿是否坚硬', style: TextStyle(fontSize: 15)),
+                    subtitle: const Text('判断是肌肉型还是脂肪型', style: TextStyle(fontSize: 12)),
+                    value: isCalfHard,
+                    onChanged: (val) => setState(() => isCalfHard = val),
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: selectedColor,
+                  ),
                 ],
                 const SizedBox(height: 32),
                 const Text(
@@ -246,6 +367,28 @@ class _AddPlanPageState extends State<AddPlanPage> {
                           _colorOption(Colors.indigo),
                         ],
                       ),
+                      if (selectedType == '腿部计划') ...[
+                        const Divider(height: 32),
+                        const Text('计划提醒设置', style: TextStyle(fontSize: 15)),
+                        const SizedBox(height: 16),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('每日提醒时间', style: TextStyle(fontSize: 14)),
+                          subtitle: Text(reminderTime != null 
+                            ? '${reminderTime!.hour.toString().padLeft(2, '0')}:${reminderTime!.minute.toString().padLeft(2, '0')}' 
+                            : '未设置 (点击选择)'),
+                          trailing: Icon(Icons.access_time, color: selectedColor),
+                          onTap: () async {
+                            final TimeOfDay? picked = await showTimePicker(
+                              context: context,
+                              initialTime: reminderTime ?? TimeOfDay.now(),
+                            );
+                            if (picked != null) {
+                              setState(() => reminderTime = picked);
+                            }
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),

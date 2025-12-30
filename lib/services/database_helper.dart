@@ -18,11 +18,18 @@ class DatabaseHelper {
 
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'butterfly_plans.db');
+    print('Opening database at $path');
     return await openDatabase(
       path,
-      version: 3,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
+      version: 8,
+      onCreate: (db, version) async {
+        print('Creating database version $version');
+        await _onCreate(db, version);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        print('Upgrading database from $oldVersion to $newVersion');
+        await _onUpgrade(db, oldVersion, newVersion);
+      },
     );
   }
 
@@ -39,20 +46,53 @@ class DatabaseHelper {
         thighCircumference REAL,
         calfCircumference REAL,
         isThighClosed INTEGER,
-        isCalfClosed INTEGER
+        isCalfClosed INTEGER,
+        isThighHard INTEGER,
+        isCalfHard INTEGER,
+        weight REAL,
+        height REAL,
+        reminderTime TEXT,
+        currentDay INTEGER DEFAULT 1
       )
     ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await db.execute('ALTER TABLE plans ADD COLUMN planType TEXT');
-    }
-    if (oldVersion < 3) {
-      await db.execute('ALTER TABLE plans ADD COLUMN thighCircumference REAL');
-      await db.execute('ALTER TABLE plans ADD COLUMN calfCircumference REAL');
-      await db.execute('ALTER TABLE plans ADD COLUMN isThighClosed INTEGER');
-      await db.execute('ALTER TABLE plans ADD COLUMN isCalfClosed INTEGER');
+    // 无论从哪个版本升级，都确保这些字段存在
+    await _addColumnIfNotExists(db, 'plans', 'planType', 'TEXT');
+    await _addColumnIfNotExists(db, 'plans', 'thighCircumference', 'REAL');
+    await _addColumnIfNotExists(db, 'plans', 'calfCircumference', 'REAL');
+    await _addColumnIfNotExists(db, 'plans', 'isThighClosed', 'INTEGER');
+    await _addColumnIfNotExists(db, 'plans', 'isCalfClosed', 'INTEGER');
+    await _addColumnIfNotExists(db, 'plans', 'isThighHard', 'INTEGER');
+    await _addColumnIfNotExists(db, 'plans', 'isCalfHard', 'INTEGER');
+    await _addColumnIfNotExists(db, 'plans', 'weight', 'REAL');
+    await _addColumnIfNotExists(db, 'plans', 'height', 'REAL');
+    await _addColumnIfNotExists(db, 'plans', 'reminderTime', 'TEXT');
+    await _addColumnIfNotExists(db, 'plans', 'currentDay', 'INTEGER DEFAULT 1');
+    print('Database upgrade completed');
+  }
+
+  Future<void> _addColumnIfNotExists(Database db, String tableName, String columnName, String columnType) async {
+    try {
+      // 检查列是否存在
+      var tableInfo = await db.rawQuery('PRAGMA table_info($tableName)');
+      bool exists = false;
+      for (var column in tableInfo) {
+        if (column['name'].toString().toLowerCase() == columnName.toLowerCase()) {
+          exists = true;
+          break;
+        }
+      }
+      
+      if (!exists) {
+        print('Adding column $columnName to $tableName');
+        await db.execute('ALTER TABLE $tableName ADD COLUMN $columnName $columnType');
+      } else {
+        print('Column $columnName already exists in $tableName');
+      }
+    } catch (e) {
+      print('Error checking/adding column $columnName: $e');
     }
   }
 
