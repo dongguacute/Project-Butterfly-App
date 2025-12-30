@@ -12,8 +12,15 @@ class AddPlanPage extends StatefulWidget {
 class _AddPlanPageState extends State<AddPlanPage> {
   final titleController = TextEditingController();
   final subtitleController = TextEditingController();
+  final thighController = TextEditingController();
+  final calfController = TextEditingController();
   final DatabaseHelper _dbHelper = DatabaseHelper();
   Color selectedColor = Colors.deepPurple;
+  String selectedType = '脸部计划';
+  bool isThighClosed = false;
+  bool isCalfClosed = false;
+
+  final List<String> planTypes = ['脸部计划', '体重计划', '腿部计划'];
 
   @override
   Widget build(BuildContext context) {
@@ -53,12 +60,26 @@ class _AddPlanPageState extends State<AddPlanPage> {
                 TextButton(
                   onPressed: () async {
                     if (titleController.text.isNotEmpty) {
+                      String iconName = 'assignment_rounded';
+                      if (selectedType == '脸部计划') {
+                        iconName = 'face_retouching_natural_rounded';
+                      } else if (selectedType == '体重计划') {
+                        iconName = 'monitor_weight_rounded';
+                      } else if (selectedType == '腿部计划') {
+                        iconName = 'directions_run_rounded';
+                      }
+
                       final newPlan = Plan(
                         title: titleController.text,
                         subtitle: subtitleController.text,
                         progress: 0.0,
-                        iconName: 'assignment_rounded',
+                        iconName: iconName,
                         colorValue: selectedColor.value,
+                        planType: selectedType,
+                        thighCircumference: selectedType == '腿部计划' ? double.tryParse(thighController.text) : null,
+                        calfCircumference: selectedType == '腿部计划' ? double.tryParse(calfController.text) : null,
+                        isThighClosed: selectedType == '腿部计划' ? isThighClosed : null,
+                        isCalfClosed: selectedType == '腿部计划' ? isCalfClosed : null,
                       );
                       await _dbHelper.insertPlan(newPlan);
                       if (mounted) {
@@ -107,6 +128,93 @@ class _AddPlanPageState extends State<AddPlanPage> {
                     border: InputBorder.none,
                   ),
                 ),
+                const SizedBox(height: 32),
+                const Text(
+                  '计划类型',
+                  style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: planTypes.map((type) {
+                    final isSelected = selectedType == type;
+                    return ChoiceChip(
+                      label: Text(type),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() => selectedType = type);
+                        }
+                      },
+                      selectedColor: Theme.of(context).colorScheme.primaryContainer,
+                      labelStyle: TextStyle(
+                        color: isSelected 
+                          ? Theme.of(context).colorScheme.primary 
+                          : Theme.of(context).colorScheme.onSurface,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    );
+                  }).toList(),
+                ),
+                if (selectedType == '腿部计划') ...[
+                  const SizedBox(height: 32),
+                  const Text(
+                    '腿部资料',
+                    style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: thighController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: '大腿围 (cm)',
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextField(
+                          controller: calfController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: '小腿围 (cm)',
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    title: const Text('大腿是否可并合', style: TextStyle(fontSize: 15)),
+                    value: isThighClosed,
+                    onChanged: (val) => setState(() => isThighClosed = val),
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: selectedColor,
+                  ),
+                  SwitchListTile(
+                    title: const Text('小腿是否可并合', style: TextStyle(fontSize: 15)),
+                    value: isCalfClosed,
+                    onChanged: (val) => setState(() => isCalfClosed = val),
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: selectedColor,
+                  ),
+                ],
                 const SizedBox(height: 32),
                 const Text(
                   '个性化',

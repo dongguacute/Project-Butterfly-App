@@ -20,8 +20,9 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'butterfly_plans.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 3,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -33,9 +34,26 @@ class DatabaseHelper {
         subtitle TEXT,
         progress REAL,
         iconName TEXT,
-        colorValue INTEGER
+        colorValue INTEGER,
+        planType TEXT,
+        thighCircumference REAL,
+        calfCircumference REAL,
+        isThighClosed INTEGER,
+        isCalfClosed INTEGER
       )
     ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE plans ADD COLUMN planType TEXT');
+    }
+    if (oldVersion < 3) {
+      await db.execute('ALTER TABLE plans ADD COLUMN thighCircumference REAL');
+      await db.execute('ALTER TABLE plans ADD COLUMN calfCircumference REAL');
+      await db.execute('ALTER TABLE plans ADD COLUMN isThighClosed INTEGER');
+      await db.execute('ALTER TABLE plans ADD COLUMN isCalfClosed INTEGER');
+    }
   }
 
   Future<int> insertPlan(Plan plan) async {

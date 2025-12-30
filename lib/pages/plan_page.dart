@@ -110,6 +110,11 @@ class PlanPageState extends State<PlanPage> {
               progress: plan.progress,
               icon: _getIconData(plan.iconName),
               color: Color(plan.colorValue),
+              planType: plan.planType,
+              thighCircumference: plan.thighCircumference,
+              calfCircumference: plan.calfCircumference,
+              isThighClosed: plan.isThighClosed,
+              isCalfClosed: plan.isCalfClosed,
               onDelete: () => _deletePlan(plan.id!),
             ),
           )),
@@ -121,6 +126,7 @@ class PlanPageState extends State<PlanPage> {
     switch (name) {
       case 'face_retouching_natural_rounded': return Icons.face_retouching_natural_rounded;
       case 'directions_run_rounded': return Icons.directions_run_rounded;
+      case 'monitor_weight_rounded': return Icons.monitor_weight_rounded;
       case 'menu_book_rounded': return Icons.menu_book_rounded;
       default: return Icons.assignment_rounded;
     }
@@ -149,6 +155,44 @@ class PlanPageState extends State<PlanPage> {
     );
   }
 
+  Widget _buildLegInfoChip(BuildContext context, String label, String value, bool? isClosed) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontSize: 11,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          if (isClosed == true) ...[
+            const SizedBox(width: 4),
+            Icon(
+              Icons.check_circle_outline_rounded,
+              size: 12,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildPlanCard(
     BuildContext context, {
     required String title,
@@ -156,6 +200,11 @@ class PlanPageState extends State<PlanPage> {
     required double progress,
     required IconData icon,
     required Color color,
+    String? planType,
+    double? thighCircumference,
+    double? calfCircumference,
+    bool? isThighClosed,
+    bool? isCalfClosed,
     VoidCallback? onDelete,
   }) {
     return Container(
@@ -191,12 +240,34 @@ class PlanPageState extends State<PlanPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        if (planType != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              planType,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: color,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     Text(
                       subtitle,
@@ -205,6 +276,19 @@ class PlanPageState extends State<PlanPage> {
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
+                    if (planType == '腿部计划' && (thighCircumference != null || calfCircumference != null)) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          if (thighCircumference != null)
+                            _buildLegInfoChip(context, '大腿', '$thighCircumference cm', isThighClosed),
+                          if (thighCircumference != null && calfCircumference != null)
+                            const SizedBox(width: 8),
+                          if (calfCircumference != null)
+                            _buildLegInfoChip(context, '小腿', '$calfCircumference cm', isCalfClosed),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
