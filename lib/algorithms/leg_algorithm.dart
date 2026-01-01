@@ -14,6 +14,7 @@ class LegAlgorithm {
     final bool isCalfClosed = plan.isCalfClosed ?? false;
     final bool isThighHard = plan.isThighHard ?? false;
     final bool isCalfHard = plan.isCalfHard ?? false;
+    final bool isLegBoneStraight = plan.isLegBoneStraight ?? true;
     final double weight = plan.weight ?? 0;
     final double height = plan.height ?? 0;
 
@@ -55,56 +56,23 @@ class LegAlgorithm {
       muscleType = '混合型';
     }
 
-    // 3. 综合评估腿型状态
+    // 3. 综合评估腿型状态与成因
+    String cause = !isLegBoneStraight ? '骨骼型' : muscleType;
     String legShapeStatus = '';
-    if (isThighClosed && isCalfClosed) {
-      legShapeStatus = '标准腿型';
-    } else if (isThighClosed && !isCalfClosed) {
-      legShapeStatus = 'O型腿倾向';
-    } else if (!isThighClosed && isCalfClosed) {
-      legShapeStatus = 'X型腿倾向';
-    } else {
-      legShapeStatus = '整体不匀称';
-    }
-
-    // 4. 计算建议改进建议
-    List<String> suggestions = [];
-    final String targetShape = plan.targetLegShape ?? '匀称';
-    suggestions.add('训练目标：$targetShape');
-
-    if (!isThighClosed) suggestions.add('建议加强大腿内侧肌肉训练');
-    if (!isCalfClosed) suggestions.add('建议通过拉伸改善小腿外翻');
     
-    if (muscleType == '脂肪型') {
-      if (targetShape == '细长') {
-        suggestions.add('建议增加高强度有氧运动，加速腿部脂肪燃烧');
-      } else {
-        suggestions.add('建议增加全身有氧运动以减少腿部脂肪');
-      }
-      if (bmiStatus == '超重' || bmiStatus == '肥胖') {
-        suggestions.add('当前 BMI 为 ${bmi.toStringAsFixed(1)} ($bmiStatus)，建议配合全身减脂饮食');
-      }
-    } else if (muscleType == '肌肉型') {
-      if (targetShape == '力量') {
-        suggestions.add('建议在拉伸的同时，增加抗阻训练以强化线条');
-      } else {
-        suggestions.add('建议运动后加强拉伸，避免肌肉过度肥大');
-      }
+    if (isThighClosed && isCalfClosed) {
+      legShapeStatus = isLegBoneStraight ? '标准腿型' : '骨骼不正 (建议矫正)';
+    } else if (isThighClosed && !isCalfClosed) {
+      legShapeStatus = 'O型腿倾向 ($cause)';
+    } else if (!isThighClosed && isCalfClosed) {
+      legShapeStatus = 'X型腿倾向 ($cause)';
     } else {
-      suggestions.add('建议结合有氧和拉伸，平衡腿部线条');
+      legShapeStatus = '整体不匀称 ($cause)';
     }
 
-    if (targetShape == '矫正' && (legShapeStatus.contains('倾向') || legShapeStatus == '整体不匀称')) {
-      suggestions.add('目标为矫正，建议重点关注日常步态和专项纠偏训练');
-    }
+    final String targetShape = plan.targetLegShape ?? '匀称';
 
-    if (ratio > 1.6 && muscleType == '脂肪型') {
-      suggestions.add('重点进行减脂运动，改善大腿脂肪堆积');
-    }
-
-    if (suggestions.length <= 1) suggestions.add('保持现状，继续维持！');
-
-    // 5. 获取今日任务
+    // 4. 获取今日任务
     List<String> dailyTasks = LegRoutines.getDailyTasks(
       muscleType,
       legShapeStatus,
@@ -112,7 +80,7 @@ class LegAlgorithm {
       targetShape: targetShape,
     );
 
-    // 6. 检查目标达成情况
+    // 5. 检查目标达成情况
     bool isGoalAchieved = false;
     List<String> achievedGoals = [];
     
@@ -147,33 +115,70 @@ class LegAlgorithm {
       }
     }
 
-    // 如果设置了数值目标，也进行检查
-    if (plan.targetWeight != null && plan.weight != null) {
-      if (plan.weight! <= plan.targetWeight!) {
-        achievedGoals.add('体重目标已达成');
-      }
-    }
-    
-    if (plan.planType == '腿部计划') {
-      if (plan.targetThighCircumference != null && plan.thighCircumference != null) {
-        if (plan.thighCircumference! <= plan.targetThighCircumference!) {
-          achievedGoals.add('大腿围目标已达成');
-        }
-      }
-      if (plan.targetCalfCircumference != null && plan.calfCircumference != null) {
-        if (plan.calfCircumference! <= plan.targetCalfCircumference!) {
-          achievedGoals.add('小腿围目标已达成');
-        }
-      }
-    }
-    
-    // 判定逻辑：如果设置了腿形目标，则以腿形目标达成作为核心判据
-    // 如果没有明确的数值目标，只要腿形目标达成就算整体达成
+    // 如果设置了腿形目标，则以腿形目标达成作为核心判据
     if (plan.planType == '腿部计划') {
       isGoalAchieved = shapeGoalReached;
-    } else if (plan.planType == '体重计划' && plan.targetWeight != null && plan.weight != null) {
-      isGoalAchieved = plan.weight! <= plan.targetWeight!;
     }
+
+    // 6. 计算建议改进建议
+    List<String> suggestions = [];
+    suggestions.add('训练目标：$targetShape');
+
+    if (cause == '骨骼型') {
+      suggestions.add('⚠️ 判定为骨骼型问题，单纯运动效果有限，强烈建议咨询专业矫正机构');
+    } else if (cause == '肌肉型') {
+      suggestions.add('💡 判定为假性腿型问题（肌肉代偿导致），请执行专项调整方案：');
+      suggestions.add('• 小腿后侧 + 跟腱拉伸 (核心)');
+      suggestions.add('• 小腿外侧放松 (纠正腿型)');
+      suggestions.add('• 脚踝活动拉伸 (重建方向感)');
+      
+      // 对于肌肉型，完全使用新方法，直接返回
+      return {
+        'status': 'success',
+        'data': {
+          'bmi': bmi > 0 ? bmi.toStringAsFixed(1) : '未知',
+          'bmiStatus': bmiStatus,
+          'ratio': ratio.toStringAsFixed(2),
+          'ratioDescription': ratioDescription,
+          'muscleType': muscleType,
+          'legShapeStatus': legShapeStatus,
+          'suggestions': suggestions,
+          'dailyTasks': dailyTasks,
+          'targetShape': targetShape,
+          'isGoalAchieved': isGoalAchieved,
+          'achievedGoals': achievedGoals,
+        }
+      };
+    } else if (cause == '脂肪型') {
+      suggestions.add('💡 判定为脂肪堆积导致，重点在于全身减脂和局部线条勾勒');
+    }
+
+    if (!isThighClosed) suggestions.add('建议加强大腿内侧肌肉训练');
+    if (!isCalfClosed) suggestions.add('建议通过拉伸改善小腿外翻');
+    if (!isLegBoneStraight) suggestions.add('检测到骨骼不平直，建议配合专业矫正训练');
+    
+    if (muscleType == '脂肪型') {
+      if (targetShape == '细长') {
+        suggestions.add('建议增加高强度有氧运动，加速腿部脂肪燃烧');
+      } else {
+        suggestions.add('建议增加全身有氧运动以减少腿部脂肪');
+      }
+      if (bmiStatus == '超重' || bmiStatus == '肥胖') {
+        suggestions.add('当前 BMI 为 ${bmi.toStringAsFixed(1)} ($bmiStatus)，建议配合全身减脂饮食');
+      }
+    } else {
+      suggestions.add('建议结合有氧和拉伸，平衡腿部线条');
+    }
+
+    if (targetShape == '矫正' && (legShapeStatus.contains('倾向') || legShapeStatus == '整体不匀称')) {
+      suggestions.add('目标为矫正，建议重点关注日常步态和专项纠偏训练');
+    }
+
+    if (ratio > 1.6 && muscleType == '脂肪型') {
+      suggestions.add('重点进行减脂运动，改善大腿脂肪堆积');
+    }
+
+    if (suggestions.length <= 1) suggestions.add('保持现状，继续维持！');
 
     return {
       'status': 'success',

@@ -12,14 +12,12 @@ class Plan {
   final bool? isCalfClosed;
   final bool? isThighHard;
   final bool? isCalfHard;
+  final bool? isLegBoneStraight;
   final double? weight;
   final double? height;
   final String? reminderTime;
   final int currentDay;
   final String? targetLegShape;
-  final double? targetThighCircumference;
-  final double? targetCalfCircumference;
-  final double? targetWeight;
 
   Plan({
     this.id,
@@ -35,14 +33,12 @@ class Plan {
     this.isCalfClosed,
     this.isThighHard,
     this.isCalfHard,
+    this.isLegBoneStraight,
     this.weight,
     this.height,
     this.reminderTime,
     this.currentDay = 1,
     this.targetLegShape,
-    this.targetThighCircumference,
-    this.targetCalfCircumference,
-    this.targetWeight,
   });
 
   Map<String, dynamic> toMap() {
@@ -60,14 +56,12 @@ class Plan {
       'isCalfClosed': isCalfClosed == null ? null : (isCalfClosed! ? 1 : 0),
       'isThighHard': isThighHard == null ? null : (isThighHard! ? 1 : 0),
       'isCalfHard': isCalfHard == null ? null : (isCalfHard! ? 1 : 0),
+      'isLegBoneStraight': isLegBoneStraight == null ? null : (isLegBoneStraight! ? 1 : 0),
       'weight': weight,
       'height': height,
       'reminderTime': reminderTime,
       'currentDay': currentDay,
       'targetLegShape': targetLegShape,
-      'targetThighCircumference': targetThighCircumference,
-      'targetCalfCircumference': targetCalfCircumference,
-      'targetWeight': targetWeight,
     };
   }
 
@@ -86,14 +80,12 @@ class Plan {
       isCalfClosed: map['isCalfClosed'] == null ? null : map['isCalfClosed'] == 1,
       isThighHard: map['isThighHard'] == null ? null : map['isThighHard'] == 1,
       isCalfHard: map['isCalfHard'] == null ? null : map['isCalfHard'] == 1,
+      isLegBoneStraight: map['isLegBoneStraight'] == null ? null : map['isLegBoneStraight'] == 1,
       weight: map['weight'] != null ? (map['weight'] as num).toDouble() : null,
       height: map['height'] != null ? (map['height'] as num).toDouble() : null,
       reminderTime: map['reminderTime'],
       currentDay: map['currentDay'] ?? 1,
       targetLegShape: map['targetLegShape'],
-      targetThighCircumference: map['targetThighCircumference'] != null ? (map['targetThighCircumference'] as num).toDouble() : null,
-      targetCalfCircumference: map['targetCalfCircumference'] != null ? (map['targetCalfCircumference'] as num).toDouble() : null,
-      targetWeight: map['targetWeight'] != null ? (map['targetWeight'] as num).toDouble() : null,
     );
   }
 }

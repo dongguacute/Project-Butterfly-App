@@ -21,7 +21,7 @@ class DatabaseHelper {
     print('Opening database at $path');
     return await openDatabase(
       path,
-      version: 10,
+      version: 11,
       onCreate: (db, version) async {
         print('Creating database version $version');
         await _onCreate(db, version);
@@ -49,14 +49,12 @@ class DatabaseHelper {
         isCalfClosed INTEGER,
         isThighHard INTEGER,
         isCalfHard INTEGER,
+        isLegBoneStraight INTEGER,
         weight REAL,
         height REAL,
         reminderTime TEXT,
         currentDay INTEGER DEFAULT 1,
-        targetLegShape TEXT,
-        targetThighCircumference REAL,
-        targetCalfCircumference REAL,
-        targetWeight REAL
+        targetLegShape TEXT
       )
     ''');
   }
@@ -70,14 +68,12 @@ class DatabaseHelper {
     await _addColumnIfNotExists(db, 'plans', 'isCalfClosed', 'INTEGER');
     await _addColumnIfNotExists(db, 'plans', 'isThighHard', 'INTEGER');
     await _addColumnIfNotExists(db, 'plans', 'isCalfHard', 'INTEGER');
+    await _addColumnIfNotExists(db, 'plans', 'isLegBoneStraight', 'INTEGER');
     await _addColumnIfNotExists(db, 'plans', 'weight', 'REAL');
     await _addColumnIfNotExists(db, 'plans', 'height', 'REAL');
     await _addColumnIfNotExists(db, 'plans', 'reminderTime', 'TEXT');
     await _addColumnIfNotExists(db, 'plans', 'currentDay', 'INTEGER DEFAULT 1');
     await _addColumnIfNotExists(db, 'plans', 'targetLegShape', 'TEXT');
-    await _addColumnIfNotExists(db, 'plans', 'targetThighCircumference', 'REAL');
-    await _addColumnIfNotExists(db, 'plans', 'targetCalfCircumference', 'REAL');
-    await _addColumnIfNotExists(db, 'plans', 'targetWeight', 'REAL');
     print('Database upgrade completed');
   }
 

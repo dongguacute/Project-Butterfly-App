@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/plan_model.dart';
 import '../algorithms/leg_algorithm.dart';
 import '../services/database_helper.dart';
+import '../data/adjustment_data.dart';
 import 'add_plan_page.dart';
+import 'leg_adjustment_detail_page.dart';
 
 class PlanDetailPage extends StatefulWidget {
   final Plan plan;
@@ -324,6 +326,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         isCalfClosed: _currentPlan.isCalfClosed,
         isThighHard: _currentPlan.isThighHard,
         isCalfHard: _currentPlan.isCalfHard,
+        isLegBoneStraight: _currentPlan.isLegBoneStraight,
         weight: _currentPlan.weight,
         height: _currentPlan.height,
         reminderTime: _currentPlan.reminderTime,
@@ -457,10 +460,44 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
           const SizedBox(height: 16),
           const Text('建议方案：', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          ...(data['suggestions'] as List<String>).map((s) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text('• $s', style: const TextStyle(fontSize: 13, color: Colors.black87)),
-          )).toList(),
+          ...(data['suggestions'] as List<String>).map((s) {
+            final adjustment = AdjustmentData.muscleLegAdjustments.cast<dynamic>().firstWhere(
+              (a) => s.contains(a.title),
+              orElse: () => null,
+            );
+            
+            return GestureDetector(
+              onTap: adjustment != null 
+                ? () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LegAdjustmentDetailPage(adjustment: adjustment),
+                    ),
+                  )
+                : null,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('• ', style: TextStyle(fontSize: 13, color: Colors.black87)),
+                    Expanded(
+                      child: Text(
+                        s, 
+                        style: TextStyle(
+                          fontSize: 13, 
+                          color: adjustment != null ? Colors.blue : Colors.black87,
+                          decoration: adjustment != null ? TextDecoration.underline : null,
+                        )
+                      ),
+                    ),
+                    if (adjustment != null)
+                      const Icon(Icons.chevron_right_rounded, size: 16, color: Colors.blue),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
         ],
       ),
     );
@@ -480,36 +517,55 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
   }
 
   Widget _buildTaskItem(BuildContext context, String task) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(
-            task == '休息日' ? Icons.bedtime_rounded : Icons.check_circle_outline_rounded,
-            color: task == '休息日' ? Colors.orange : Color(_currentPlan.colorValue),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              task,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+    // 检查是否是可跳转的调整方式
+    final adjustment = AdjustmentData.muscleLegAdjustments.cast<dynamic>().firstWhere(
+      (a) => task.contains(a.title),
+      orElse: () => null,
+    );
+
+    return GestureDetector(
+      onTap: adjustment != null 
+        ? () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LegAdjustmentDetailPage(adjustment: adjustment),
             ),
-          ),
-          Icon(Icons.chevron_right_rounded, color: Colors.grey[300]),
-        ],
+          )
+        : null,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.withOpacity(0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(
+              task == '休息日' ? Icons.bedtime_rounded : Icons.check_circle_outline_rounded,
+              color: task == '休息日' ? Colors.orange : Color(_currentPlan.colorValue),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                task,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              ),
+            ),
+            if (adjustment != null)
+              const Icon(Icons.info_outline_rounded, color: Colors.blue, size: 20),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right_rounded, color: Colors.grey[300]),
+          ],
+        ),
       ),
     );
   }
