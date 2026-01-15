@@ -3,11 +3,18 @@ import '../models/adjustment_model.dart';
 
 class LegAdjustmentDetailPage extends StatelessWidget {
   final LegAdjustment adjustment;
+  final Color? themeColor;
 
-  const LegAdjustmentDetailPage({super.key, required this.adjustment});
+  const LegAdjustmentDetailPage({
+    super.key, 
+    required this.adjustment,
+    this.themeColor,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final effectiveColor = themeColor ?? Colors.blueAccent;
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -25,8 +32,8 @@ class LegAdjustmentDetailPage extends StatelessWidget {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.blueAccent,
-                      Colors.blueAccent.withOpacity(0.7),
+                      effectiveColor,
+                      effectiveColor.withOpacity(0.7),
                     ],
                   ),
                 ),
@@ -51,7 +58,7 @@ class LegAdjustmentDetailPage extends StatelessWidget {
                     '怎么做',
                     Icons.directions_run_rounded,
                     adjustment.howToDo,
-                    Colors.blue,
+                    effectiveColor,
                   ),
                   const SizedBox(height: 24),
                   _buildSection(

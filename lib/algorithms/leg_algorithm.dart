@@ -131,51 +131,42 @@ class LegAlgorithm {
       suggestions.add('• 小腿后侧 + 跟腱拉伸 (核心)');
       suggestions.add('• 小腿外侧放松 (纠正腿型)');
       suggestions.add('• 脚踝活动拉伸 (重建方向感)');
-      
-      // 对于肌肉型，完全使用新方法，直接返回
-      return {
-        'status': 'success',
-        'data': {
-          'bmi': bmi > 0 ? bmi.toStringAsFixed(1) : '未知',
-          'bmiStatus': bmiStatus,
-          'ratio': ratio.toStringAsFixed(2),
-          'ratioDescription': ratioDescription,
-          'muscleType': muscleType,
-          'legShapeStatus': legShapeStatus,
-          'suggestions': suggestions,
-          'dailyTasks': dailyTasks,
-          'targetShape': targetShape,
-          'isGoalAchieved': isGoalAchieved,
-          'achievedGoals': achievedGoals,
-        }
-      };
     } else if (cause == '脂肪型') {
-      suggestions.add('💡 判定为脂肪堆积导致，重点在于全身减脂和局部线条勾勒');
-    }
+      suggestions.add('💡 判定为脂肪堆积导致，重点在于全身减脂和局部线条勾勒：');
+      suggestions.add('• 高强度有氧/HIIT (核心：燃烧全身脂肪)');
+      suggestions.add('• 针对性腿部塑形 (深蹲、箭步蹲，轻重量多次数)');
+      suggestions.add('• 饮食管理 (低油低糖，维持热量缺口)');
+      suggestions.add('• 睡前揉捏按摩 (促进循环，改善浮肿)');
 
-    if (!isThighClosed) suggestions.add('建议加强大腿内侧肌肉训练');
-    if (!isCalfClosed) suggestions.add('建议通过拉伸改善小腿外翻');
-    if (!isLegBoneStraight) suggestions.add('检测到骨骼不平直，建议配合专业矫正训练');
-    
-    if (muscleType == '脂肪型') {
-      if (targetShape == '细长') {
-        suggestions.add('建议增加高强度有氧运动，加速腿部脂肪燃烧');
-      } else {
-        suggestions.add('建议增加全身有氧运动以减少腿部脂肪');
-      }
       if (bmiStatus == '超重' || bmiStatus == '肥胖') {
-        suggestions.add('当前 BMI 为 ${bmi.toStringAsFixed(1)} ($bmiStatus)，建议配合全身减脂饮食');
+        suggestions.add('• 建议配合全身减脂饮食，当前 BMI 为 ${bmi.toStringAsFixed(1)} ($bmiStatus)');
       }
-    } else {
-      suggestions.add('建议结合有氧和拉伸，平衡腿部线条');
+      if (targetShape == '细长') {
+        suggestions.add('• 增加有氧时长，加速腿部围度缩小');
+      }
+    } else if (cause == '混合型') {
+      suggestions.add('💡 判定为混合型，建议平衡减脂与拉伸：');
+      suggestions.add('• 结合中等强度有氧与肌肉拉伸');
+      suggestions.add('• 重点放松僵硬肌肉，同时控制脂肪比例');
     }
 
+    // 针对性局部建议
+    if (!isThighClosed) {
+      suggestions.add(cause == '脂肪型' ? '• 针对大腿内侧：加强内收肌训练，减少内侧脂肪堆积' : '建议加强大腿内侧肌肉训练');
+    }
+    if (!isCalfClosed) {
+      suggestions.add(cause == '脂肪型' ? '• 针对小腿线条：配合拉伸改善外翻，使视觉更直' : '建议通过拉伸改善小腿外翻');
+    }
+    if (ratio > 1.6 && cause == '脂肪型') {
+      suggestions.add('• 针对比例问题：重点加强大腿减脂，平衡腿部比例');
+    }
+
+    if (!isLegBoneStraight && cause != '骨骼型') {
+      suggestions.add('检测到骨骼不平直，建议配合专业矫正训练');
+    }
+    
     if (targetShape == '矫正' && (legShapeStatus.contains('倾向') || legShapeStatus == '整体不匀称')) {
       suggestions.add('目标为矫正，建议重点关注日常步态和专项纠偏训练');
-    }
-
-    if (ratio > 1.6 && muscleType == '脂肪型') {
-      suggestions.add('重点进行减脂运动，改善大腿脂肪堆积');
     }
 
     if (suggestions.length <= 1) suggestions.add('保持现状，继续维持！');

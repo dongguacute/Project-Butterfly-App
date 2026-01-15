@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/plan_model.dart';
 import '../services/database_helper.dart';
+import '../services/notification_service.dart';
 import '../algorithms/leg_algorithm.dart';
 import 'add_plan_page.dart';
 import 'plan_detail_page.dart';
@@ -63,6 +64,7 @@ class PlanPageState extends State<PlanPage> {
 
     if (confirmed == true) {
       await _dbHelper.deletePlan(id);
+      await NotificationService().cancelNotification(id);
       _loadPlans();
     }
   }
@@ -293,21 +295,6 @@ class PlanPageState extends State<PlanPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            if (reminderTime != null)
-              Row(
-                children: [
-                  Icon(Icons.notifications_active_outlined, size: 14, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(width: 4),
-                  Text(
-                    reminderTime,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
           ],
         ),
         const SizedBox(height: 8),
@@ -443,6 +430,23 @@ class PlanPageState extends State<PlanPage> {
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
+                        if (plan.reminderTime != null) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(Icons.notifications_active_outlined, size: 12, color: color.withOpacity(0.7)),
+                              const SizedBox(width: 4),
+                              Text(
+                                plan.reminderTime!,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: color.withOpacity(0.7),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         if (planType == '腿部计划' && (thighCircumference != null || calfCircumference != null)) ...[
                           const SizedBox(height: 8),
                           Row(

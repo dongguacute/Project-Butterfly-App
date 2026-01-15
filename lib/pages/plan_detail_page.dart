@@ -461,10 +461,10 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
           const Text('建议方案：', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           ...(data['suggestions'] as List<String>).map((s) {
-            final adjustment = AdjustmentData.muscleLegAdjustments.cast<dynamic>().firstWhere(
-              (a) => s.contains(a.title),
-              orElse: () => null,
-            );
+            final adjustment = AdjustmentData.allAdjustments.cast<dynamic>().firstWhere(
+      (a) => s.contains(a.title),
+      orElse: () => null,
+    );
             
             return GestureDetector(
               onTap: adjustment != null 
@@ -518,7 +518,7 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
 
   Widget _buildTaskItem(BuildContext context, String task) {
     // 检查是否是可跳转的调整方式
-    final adjustment = AdjustmentData.muscleLegAdjustments.cast<dynamic>().firstWhere(
+    final adjustment = AdjustmentData.allAdjustments.cast<dynamic>().firstWhere(
       (a) => task.contains(a.title),
       orElse: () => null,
     );
@@ -528,7 +528,10 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
         ? () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => LegAdjustmentDetailPage(adjustment: adjustment),
+              builder: (context) => LegAdjustmentDetailPage(
+                adjustment: adjustment,
+                themeColor: Color(_currentPlan.colorValue),
+              ),
             ),
           )
         : null,
@@ -560,10 +563,16 @@ class _PlanDetailPageState extends State<PlanDetailPage> {
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
               ),
             ),
-            if (adjustment != null)
+            if (adjustment != null) ...[
               const Icon(Icons.info_outline_rounded, color: Colors.blue, size: 20),
-            const SizedBox(width: 8),
-            Icon(Icons.chevron_right_rounded, color: Colors.grey[300]),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: Color(_currentPlan.colorValue).withOpacity(0.3),
+              ),
+            ] else
+              Icon(Icons.chevron_right_rounded, color: Colors.grey[300]),
           ],
         ),
       ),

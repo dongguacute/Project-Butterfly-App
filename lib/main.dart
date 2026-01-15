@@ -4,9 +4,13 @@ import 'package:flutter/services.dart';
 import 'pages/plan_page.dart';
 import 'pages/settings_page.dart';
 import 'widgets/custom_app_bar.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 初始化通知服务
+  await NotificationService().init();
   
   // 设置系统 UI 样式，实现沉浸式体验
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -23,6 +27,8 @@ void main() async {
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -52,20 +58,12 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    // 根据当前主题动态调整系统状态栏图标颜色
-    final isDarkMode = _themeMode == ThemeMode.dark || 
-        (_themeMode == ThemeMode.system && MediaQuery.of(context).platformBrightness == Brightness.dark);
+    // 修复：不在这里使用 MediaQuery.of(context)，因为它在 MaterialApp 之外会报错导致黑屏
+    // 我们将系统 UI 样式的逻辑移到 MaterialApp 的 builder 中或让其自动处理
     
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
-      statusBarBrightness: isDarkMode ? Brightness.dark : Brightness.light,
-      systemNavigationBarColor: Colors.transparent, // 确保切换主题时底部导航栏依然透明
-      systemNavigationBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
-      systemNavigationBarDividerColor: Colors.transparent,
-    ));
-
     return MaterialApp(
       title: 'Project Butterfly',
+      navigatorKey: MyApp.navigatorKey,
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
       theme: ThemeData(
@@ -79,6 +77,20 @@ class _MyAppState extends State<MyApp> {
         ),
         useMaterial3: true,
       ),
+      builder: (context, child) {
+        // 在 MaterialApp 内部，我们可以安全地使用 MediaQuery
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+        
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+          statusBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDarkMode ? Brightness.dark : Brightness.light,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
+          systemNavigationBarDividerColor: Colors.transparent,
+        ));
+        
+        return child!;
+      },
       home: const MainNavigationScreen(title: 'ProjectButterflyApp'),
     );
   }

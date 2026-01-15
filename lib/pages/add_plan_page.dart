@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/plan_model.dart';
 import '../services/database_helper.dart';
+import '../services/notification_service.dart';
 
 class AddPlanPage extends StatefulWidget {
   final Plan? plan;
@@ -163,9 +164,29 @@ class _AddPlanPageState extends State<AddPlanPage> {
                         );
 
                         if (widget.plan == null) {
-                          await _dbHelper.insertPlan(newPlan);
+                          final id = await _dbHelper.insertPlan(newPlan);
+                          // 设置新通知
+                          if (reminderTime != null) {
+                            await NotificationService().scheduleDailyNotification(
+                              id: id,
+                              title: 'Project Butterfly: ${newPlan.title}',
+                              body: '该开始今天的训练啦！点击查看计划详情。',
+                              time: reminderTime!,
+                            );
+                          }
                         } else {
                           await _dbHelper.updatePlan(newPlan);
+                          // 更新通知
+                          if (reminderTime != null) {
+                            await NotificationService().scheduleDailyNotification(
+                              id: widget.plan!.id!,
+                              title: 'Project Butterfly: ${newPlan.title}',
+                              body: '该开始今天的训练啦！点击查看计划详情。',
+                              time: reminderTime!,
+                            );
+                          } else {
+                            await NotificationService().cancelNotification(widget.plan!.id!);
+                          }
                         }
                         if (mounted) {
                           Navigator.pop(context, true); // 返回 true 表示已添加新计划
@@ -405,6 +426,42 @@ class _AddPlanPageState extends State<AddPlanPage> {
                     activeColor: selectedColor,
                   ),
                 ],
+                const Divider(height: 32),
+                const Text('计划提醒设置', style: TextStyle(fontSize: 15)),
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('每日提醒时间', style: TextStyle(fontSize: 14)),
+                  subtitle: Text(reminderTime != null 
+                    ? '${reminderTime!.hour.toString().padLeft(2, '0')}:${reminderTime!.minute.toString().padLeft(2, '0')}' 
+                    : '未设置 (点击选择)'),
+                  trailing: Icon(Icons.access_time, color: selectedColor),
+                  onTap: () async {
+                    // 请求权限
+                    await NotificationService().requestPermissions();
+                    
+                    if (mounted) {
+                      final TimeOfDay? picked = await showTimePicker(
+                        context: context,
+                        initialTime: reminderTime ?? TimeOfDay.now(),
+                      );
+                      if (picked != null) {
+                        setState(() => reminderTime = picked);
+                      }
+                    }
+                  },
+                ),
+                TextButton.icon(
+                  onPressed: () async {
+                    await NotificationService().showInstantNotification(
+                      id: 999,
+                      title: '通知测试',
+                      body: '如果您看到这条消息，说明提醒功能工作正常！',
+                    );
+                  },
+                  icon: const Icon(Icons.notifications_active),
+                  label: const Text('发送测试通知'),
+                ),
                 const SizedBox(height: 32),
                 const Text(
                   '个性化',
@@ -436,28 +493,6 @@ class _AddPlanPageState extends State<AddPlanPage> {
                           _colorOption(Colors.indigo),
                         ],
                       ),
-                      if (selectedType == '腿部计划') ...[
-                        const Divider(height: 32),
-                        const Text('计划提醒设置', style: TextStyle(fontSize: 15)),
-                        const SizedBox(height: 16),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('每日提醒时间', style: TextStyle(fontSize: 14)),
-                          subtitle: Text(reminderTime != null 
-                            ? '${reminderTime!.hour.toString().padLeft(2, '0')}:${reminderTime!.minute.toString().padLeft(2, '0')}' 
-                            : '未设置 (点击选择)'),
-                          trailing: Icon(Icons.access_time, color: selectedColor),
-                          onTap: () async {
-                            final TimeOfDay? picked = await showTimePicker(
-                              context: context,
-                              initialTime: reminderTime ?? TimeOfDay.now(),
-                            );
-                            if (picked != null) {
-                              setState(() => reminderTime = picked);
-                            }
-                          },
-                        ),
-                      ],
                     ],
                   ),
                 ),

@@ -113,6 +113,19 @@ class DatabaseHelper {
     });
   }
 
+  Future<Plan?> getPlanById(int id) async {
+    Database db = await database;
+    List<Map<String, dynamic>> maps = await db.query(
+      'plans',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (maps.isNotEmpty) {
+      return Plan.fromMap(maps.first);
+    }
+    return null;
+  }
+
   Future<int> updatePlan(Plan plan) async {
     Database db = await database;
     return await db.update(
